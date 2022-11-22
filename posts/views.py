@@ -1,7 +1,7 @@
 from django.http import HttpResponse
 from datetime import datetime
 from django.shortcuts import render
-from posts.models import Post
+from posts.models import Post, Comment
 
 
 def main(request):
@@ -27,7 +27,20 @@ def posts_view(request):
         }
 
         return render(request, 'posts/posts.html', context=data)
-    
+
+
+def post_detail_view(request, **kwargs):
+    if request.method == 'GET':
+        post = Post.objects.get(id=kwargs['id'])
+        comments = Comment.objects.filter(post=post)
+
+        data = {
+            'post': post,
+            'comments': comments
+        }
+
+        return render(request, 'posts/detail.html', context=data)
+
 
 def hello(request):
     if request.method == 'GET':
