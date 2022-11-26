@@ -18,7 +18,7 @@ class Post(models.Model):
     description = models.TextField()
     image = models.ImageField()
     rate = models.DecimalField(max_digits=10, decimal_places=1)
-    hasgtag = models.ForeignKey(Hashtag, on_delete=models.CASCADE, null=True, related_name='posts')
+    hashtag = models.ForeignKey(Hashtag, on_delete=models.CASCADE, null=True, related_name='posts')
 
     def __str__(self):
         return self.title
@@ -31,5 +31,8 @@ class Comment(models.Model):
 
     def __str__(self):
         return f'{self.author.username}_{self.text}'
+
+
+
 
 
