@@ -4,9 +4,48 @@ from django.shortcuts import render, redirect
 from posts.forms import PostCreateForm, CommentCreateForm
 from posts.models import Post, Comment, Hashtag
 from users.utils import get_user_from_request
-
+from django.views.generic import ListView, CreateView
 
 PAGINATION_LIMIT = 4
+
+
+class HashtagsView(ListView):
+    model = Hashtag
+    template_name = 'hashtags/hashtags.html'
+
+    def get(self, request,*args, **kwargs):
+        context = {
+            'object_list': self.get_queryset(),
+            'user': get_user_from_request(request)
+        }
+        return render(request, self.template_name, context=context)
+    
+    
+class PostsCreateView(ListView, CreateView):
+    model = Post
+    template_name = 'posts/create.html'
+    form_class = PostCreateForm
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        return {
+            'form': kwargs['form'] if kwargs.get('form') else self.form_class,
+            'user': get_user_from_request(self.request)
+        }
+
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(data=request.POST)
+
+        if form.is_valid():
+            self.model.objects.create(
+                author_id=1,
+                title=form.cleaned_data.get('title'),
+                description=form.cleaned_data.get('description'),
+                rate=form.cleaned_data.get('rate'),
+                hashtag_id=form.cleaned_data.get('hashtag')
+            )
+            return redirect('/posts')
+        else:
+            return render(request, self.template_name, context=self.get_context_data(form=form))
 
 
 def main(request):
@@ -17,8 +56,8 @@ def main(request):
             'posts': posts
         }
         return render(request, 'layouts/main.html', context=data)
-    
-    
+
+
 def posts_view(request):
     if request.method == 'GET':
         hashtag_id = request.GET.get('hashtag_id')
@@ -46,34 +85,6 @@ def posts_view(request):
         }
 
         return render(request, 'posts/posts.html', context=data)
-
-
-def post_create_view(request):
-    if request.method == 'GET':
-        data = {
-            'form': PostCreateForm,
-            'user': get_user_from_request(request)
-        }
-        return render(request, 'posts/create.html', context=data)
-
-    if request.method == 'POST':
-        form = PostCreateForm(data=request.POST)
-
-        if form.is_valid():
-            Post.objects.create(
-                author_id=1,
-                title=form.cleaned_data.get('title'),
-                description=form.cleaned_data.get('description'),
-                rate=form.cleaned_data.get('rate'),
-                hashtag_id=form.cleaned_data.get('hashtag')
-            )
-            return redirect('/posts')
-        else:
-            data = {
-                'form': form,
-                'user': get_user_from_request(request)
-            }
-            return render(request, 'posts/create.html', context=data)
 
 
 def post_detail_view(request, **kwargs):
@@ -111,18 +122,6 @@ def post_detail_view(request, **kwargs):
             return render(request, 'posts/detail.html', context=data)
 
 
-def hashtags_view(request, **kwargs):
-    if request.method == 'GET':
-        hashtags = Hashtag.objects.all()
-
-        data = {
-            'hashtags': hashtags,
-            'user': get_user_from_request(request)
-        }
-
-        return render(request, 'hashtags/hashtags.html', context=data)
-
-
 def hello(request):
     if request.method == 'GET':
         return HttpResponse('Hello! Its my project')
@@ -137,3 +136,5 @@ def now_date(request):
 def bye(request):
     if request.method == 'GET':
         return HttpResponse('Goodbye user!!!')
+
+
